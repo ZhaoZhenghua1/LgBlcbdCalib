@@ -16,6 +16,8 @@ public:
 	int ZOrder() { return m_zorder; }
 	void SetVisible(bool visible);
 	bool Visible() { return m_bVisible; }
+	void SetDisabled(bool b) { m_bDistabled = b; }
+	bool IsDisabled() { return m_bDistabled; }
 protected:
 	virtual void OnPaint(CDC* dc) {}
 	virtual bool MouseMove(UINT, CPoint) { return false; }
@@ -27,6 +29,7 @@ private:
 	CWnd* m_wnd;
 	int m_zorder = 0;
 	bool m_bVisible = true;
+	bool m_bDistabled = false;
 };
 
 enum ButtonStatus{eBtnNormal, eBtnHover, eBtnPressed};
@@ -52,9 +55,6 @@ class BlankPushButton : public StatusBtnItem
 public:
 	using StatusBtnItem::StatusBtnItem;
 protected:
-	virtual bool MouseMove(UINT, CPoint) override;
-	virtual bool MouseDown(UINT, CPoint) override;
-	virtual bool MouseUp(UINT, CPoint) override;
 	virtual void Update(bool all = false)override {};
 };
 

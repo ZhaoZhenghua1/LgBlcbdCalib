@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{35019480-DE86-402B-AB42-A312416704A3}</ProjectGuid>
-    <RootNamespace>CameraDealing</RootNamespace>
+    <RootNamespace>LgBlcbdCalib</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <Keyword>MFCProj</Keyword>
   </PropertyGroup>

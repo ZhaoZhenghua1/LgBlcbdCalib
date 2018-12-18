@@ -42,16 +42,10 @@ void MiniBlackBoard::FeedLocation(CRect p)
 
 void MiniBlackBoard::ReSet(CRect(*rects)[4])
 {
-	for (int i = 0; i < 4; ++i)
-	{
-		for (int j = 0; j < 4; ++j)
-		{
-			m_anchors[i][j] = rects[i][j];
-		}
-	}
+	memcpy(m_anchors, rects, sizeof(m_anchors));
 	
-	m_curBBIndex = -1;
-	m_curAnchorIndex = -1;
+	m_curBBIndex = 0;
+	m_curAnchorIndex = 0;
 	Update();
 }
 
@@ -101,8 +95,10 @@ void MiniBlackBoard::OnPaint(CDC * pDC)
 		{
 			CImage Image;
 			Load(&Image, anchored ? IDB_RIGHT : IDB_WARNING);
-			RECT src = { 0,0, Image.GetWidth(), Image.GetHeight() };
-			RECT imgDst = { dst.right - 25, dst.bottom - 47, dst.right - 5, dst.bottom - 27 };
+			CRect src = { 0,0, Image.GetWidth(), Image.GetHeight() };
+			CRect imgDst = { dst.right - 25, dst.bottom - 47, dst.right - 5, dst.bottom - 27 };
+			//SetStretchBltMode(pDC->m_hDC, src.Width() > imgDst.Width() ? HALFTONE : COLORONCOLOR);
+			//Image.StretchBlt(pDC->m_hDC, imgDst);
 			Image.Draw(pDC->m_hDC, imgDst, src);
 			Image.Destroy();
 		}

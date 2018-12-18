@@ -61,6 +61,9 @@ void ComboBox::DrawItems(CDC * dc)
 		for (std::wstring& item : m_items)
 		{
 			RECT r = { StatusBtnItem::Rect().left, top, StatusBtnItem::Rect().right, top + ITEM_H };
+			CBrush bk;
+			bk.CreateSolidBrush(RGB(102,102,102));
+			dc->FillRect(&r, &bk);
 			CBrush br;
 			br.CreateSolidBrush(RGB(22, 168, 224));
 			RECT ir = { r.left + 1, r.top + 1,r.right - 1,r.bottom - 1 };
@@ -82,6 +85,10 @@ bool ComboBox::MouseMove(UINT u, CPoint p)
 
 bool ComboBox::MouseDown(UINT u, CPoint p)
 {
+	if (IsDisabled())
+	{
+		return false;
+	}
 	bool ret = false;
 	StatusBtnItem::MouseDown(u, p);
 	if (StatusBtnItem::Status() == eBtnPressed)

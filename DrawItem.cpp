@@ -18,6 +18,8 @@ inline bool CDrawItem::Contain(CPoint & p)
 
 inline void CDrawItem::Update(bool all) 
 { 
+	if (!m_wnd->m_hWnd)
+		return;
 	if (all)
 	{
 		m_wnd->Invalidate();
@@ -39,6 +41,9 @@ void StatusBtnItem::OnPaint(CDC * dc)
 
 bool StatusBtnItem::MouseMove(UINT c, CPoint p)
 {
+	if (IsDisabled())
+		return false;
+
 	auto old = m_status;
 	if (0==c && Contain(p))
 	{
@@ -52,11 +57,18 @@ bool StatusBtnItem::MouseMove(UINT c, CPoint p)
 	{
 		Update();
 	}
+	if (Status() == eBtnHover)
+	{
+		::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_HAND));
+	}
 	return false;
 }
 
 bool StatusBtnItem::MouseDown(UINT c, CPoint p)
 {
+	if (IsDisabled())
+		return false;
+
 	if (MK_LBUTTON&c && Contain(p))
 	{
 		m_status = eBtnPressed;
@@ -71,6 +83,9 @@ bool StatusBtnItem::MouseDown(UINT c, CPoint p)
 
 bool StatusBtnItem::MouseUp(UINT c, CPoint p)
 {
+	if (IsDisabled())
+		return false;
+
 	bool update = false;
 	if (Contain(p) && m_status == eBtnPressed)
 	{
@@ -175,14 +190,18 @@ void CheckButton::SetChecked(bool checked)
 
 bool CheckButton::MouseUp(UINT ui, CPoint p)
 {
-	bool pressed = StatusBtnItem::Status() == eBtnPressed;
-	StatusBtnItem::MouseUp(ui, p);
-	if (pressed && Contain(p) && !m_checked)
+	if (!IsDisabled())
 	{
-		m_checked = true;
-		m_funCkChanged(this);
-		Update();
+		bool pressed = StatusBtnItem::Status() == eBtnPressed;
+		StatusBtnItem::MouseUp(ui, p);
+		if (pressed && Contain(p) && !m_checked)
+		{
+			m_checked = true;
+			m_funCkChanged(this);
+			Update();
+		}
 	}
+
 	return false;
 }
 
@@ -192,8 +211,11 @@ void CheckButton::OnPaint(CDC * pDC)
 	{
 		CImage Image;
 		Load(&Image, m_checked&&m_resIDChecked ? m_resIDChecked : m_resIDUnchecked);
-		RECT src = { 0,0, Image.GetWidth(), Image.GetHeight() };
-		Image.Draw(pDC->m_hDC, Rect(), src);
+		CRect src = { 0,0, Image.GetWidth(), Image.GetHeight() };
+		CRect dst = Rect();
+		SetStretchBltMode(pDC->m_hDC, src.Width() > dst.Width() ? HALFTONE : COLORONCOLOR);
+		Image.StretchBlt(pDC->m_hDC, dst);
+		/*Image.Draw(pDC->m_hDC, Rect(), src);*/
 		Image.Destroy();
 	}
 	if (!m_text.empty())
@@ -249,26 +271,3 @@ CheckGroup::CheckGroup(std::initializer_list<CheckButton*> list) :m_btns(list)
 	}
 }
 
-bool BlankPushButton::MouseMove(UINT u, CPoint p)
-{
-	StatusBtnItem::MouseMove(u, p);
-	if (Status() == eBtnHover)
-	{
-		::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_HAND));
-	}
-	else
-	{
-		::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_ARROW));
-	}
-	return false;
-}
-
-bool BlankPushButton::MouseDown(UINT u, CPoint p)
-{
-	return StatusBtnItem::MouseDown(u, p);
-}
-
-bool BlankPushButton::MouseUp(UINT u, CPoint p)
-{
-	return StatusBtnItem::MouseUp(u, p);
-}

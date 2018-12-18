@@ -113,7 +113,11 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 
 		CRect cameraRect = m_camera->Rect();
 		minibb->ReSet(m_camera->GetCameraThings().GetDataFromRegedit(i == 1 ? EBBStatus::e4 : EBBStatus::e2, cameraRect.Size()));
-		this->Invalidate(false);
+		if (this->m_hWnd)
+		{
+			checkBtn1->SetChecked(true);
+			this->Invalidate(false);
+		}
 	});
 	
 
@@ -140,11 +144,18 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 	m_play = blankBtnCanera;
 	blankBtnCanera->SetInvoker([=]() 
 	{
+		for (auto ite = m_drawItems.begin(); ite != m_drawItems.end(); ++ite)
+		{
+			CDrawItem* item = (*ite);
+			//未播放，则不能单击其他按钮
+			item->SetDisabled(false);
+		}
 		blankBtnCanera->SetVisible(false);
 		m_camera->SetVisible(true);
 		m_camera->StartCamera(true);
 		combox->SetCurrentIndex(0);
 		minibb->ShowErrorAndWarning(true);
+		checkBtn1->SetChecked(true);
 		this->Invalidate(false);
 	});
 
@@ -155,6 +166,7 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 		CRect empty[4][4];
 		m_camera->GetCameraThings().Save(minibb->GetBBStatus(), empty, CSize(m_camera->Rect().right - m_camera->Rect().left, m_camera->Rect().bottom - m_camera->Rect().top));
 		minibb->ReSet(empty);
+		checkBtn1->SetChecked(true);
 		Invalidate(false);
 	});
 
@@ -166,6 +178,16 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 		m_camera->GetCameraThings().Save(minibb->GetBBStatus(), minibb->GetPoints(), CSize(m_camera->Rect().right - m_camera->Rect().left, m_camera->Rect().bottom - m_camera->Rect().top));
 		AfxMessageBox(L"保存成功!");
 	});
+	combox->SetCurrentIndex(0);
+	for (auto ite = m_drawItems.begin(); ite != m_drawItems.end(); ++ite)
+	{
+		CDrawItem* item = (*ite);
+		//未播放，则不能单击其他按钮
+		if (item != m_play && item != m_minimum && item != m_close)
+		{
+			item->SetDisabled(true);
+		}
+	}
 }
 
 void CCameraDealingDlg::DoDataExchange(CDataExchange* pDX)
@@ -192,6 +214,8 @@ BOOL CCameraDealingDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
+	AfxSetWindowText(this->m_hWnd, L"LgBlcbdCalib");
+//	this->SetWindowTextW(L"LgBlcbdCalib");
 	// 将“关于...”菜单项添加到系统菜单中。
 
 	// IDM_ABOUTBOX 必须在系统命令范围内。
@@ -299,7 +323,23 @@ void CCameraDealingDlg::OnPaint()
 		MemDC.SetTextColor(RGB(255, 255, 255));
 		MemDC.SetBkMode(TRANSPARENT);
 		CFont font;
-		font.CreatePointFont(100, L"微软雅黑");
+		VERIFY(font.CreateFont(
+			20,                        // nHeight
+			0,                         // nWidth
+			0,                         // nEscapement
+			0,                         // nOrientation
+			FW_BOLD,                   // nWeight
+			FALSE,                     // bItalic
+			FALSE,                     // bUnderline
+			0,                         // cStrikeOut
+			DEFAULT_CHARSET,           // nCharSet
+			OUT_DEFAULT_PRECIS,        // nOutPrecision
+			CLIP_DEFAULT_PRECIS,       // nClipPrecision
+			DEFAULT_QUALITY,           // nQuality
+			DEFAULT_PITCH | FF_SWISS,  // nPitchAndFamily
+			_T("微软雅黑")));           // lpszFacename
+
+		//font.CreatePointFont(100, L"微软雅黑");
 		MemDC.SelectObject(font);
 		RECT r = {887,57,995,118};
 		CString ip;
@@ -314,6 +354,7 @@ void CCameraDealingDlg::OnPaint()
 			ip = ip.Mid(0, atSig);
 		}
 		MemDC.DrawText(ip, &r, DT_LEFT | DT_WORDBREAK);
+		font.DeleteObject();
 
 		m_drawItems.sort([](CDrawItem* l, CDrawItem* r) {return l->ZOrder() < r->ZOrder();});
 		
@@ -379,12 +420,6 @@ void CCameraDealingDlg::OnLButtonDown(UINT ui, CPoint p)
 {
 	for (auto ite = m_drawItems.rbegin(); ite != m_drawItems.rend(); ++ite)
 	{
-		CDrawItem* item = (*ite);
-		//未播放，则不能单击其他按钮
-		if (!m_camera->IsCameraStarted() && (item != m_play && item != m_minimum && item != m_close))
-		{
-			continue;
-		}
 		if ((*ite)->Visible())
 		{
 			if ((*ite)->MouseDown(ui, p))
