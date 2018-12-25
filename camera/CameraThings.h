@@ -28,6 +28,7 @@ public:
 	CString GetCameraIP() { return m_initData.GetCameraIP(); }
 	void Save(EBBStatus eBBType, CRect (*)[4], CSize );
 	CRect(*GetDataFromRegedit(EBBStatus eBBType, CSize displaySize))[4];
+	bool IsAllMarked(EBBStatus eBBType);
 private:
 	DataInit m_initData;
 	Decoder m_decoder;

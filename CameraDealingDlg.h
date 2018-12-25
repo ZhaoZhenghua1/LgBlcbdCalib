@@ -7,6 +7,7 @@
 
 class CDrawItem;
 class CameraItem;
+class MiniBlackBoard;
 // CCameraDealingDlg ¶Ô»°¿ò
 class CCameraDealingDlg : public CDialogEx
 {
@@ -40,6 +41,9 @@ public:
 	afx_msg void OnLButtonDown(UINT, CPoint);
 	afx_msg void OnLButtonUp(UINT, CPoint);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	virtual void OnOK() override{}
+	virtual void OnCancel()override{}
+	void Close();
 private:
 	template<class T>
 	T* CreateT(RECT& r)
@@ -51,6 +55,7 @@ private:
 private:
 	std::list<CDrawItem*> m_drawItems;
 	CameraItem* m_camera = nullptr;
+	MiniBlackBoard* m_miniBB = nullptr;
 	CDrawItem* m_minimum = nullptr;
 	CDrawItem* m_close = nullptr;
 	CDrawItem* m_play = nullptr;

@@ -104,7 +104,7 @@ void DataInit::InitFromWebService()
 	CString EIpAndPort = selected[0].node().child_value();
 	WS_IDMC_Room_Detail_Electric_Get = HttpGet(EIpAndPort + L"WebService/Mgr_Classroom_PC.asmx/WS_IDMC_Room_Detail_Electric_Get");
 	//L"rtsp://admin:lg123456@172.16.63.42/live/av0";L"rtsp://admin:lg123456@172.16.63.65:554";//临时代码
-	m_cameraIP = GetCameraIP(WS_IDMC_Room_Detail_Electric_Get) + L"/live/av0";//L"rtsp://admin:lg123456@172.16.63.165:554";//
+	m_cameraIP = GetCameraIP(WS_IDMC_Room_Detail_Electric_Get);//L"rtsp://admin:lg123456@172.16.63.165:554";//
 }
 
 CString DataInit::GetCameraIP(const CString& WS_IDMC_Room_Detail_Electric_Get)
@@ -116,13 +116,23 @@ CString DataInit::GetCameraIP(const CString& WS_IDMC_Room_Detail_Electric_Get)
 		throw std::wstring(L"WS_IDMC_Room_Detail_Electric_Get") + L" WEB API GET XML PARSE ERROR!" + s2ws(res.description());
 	}
 
-	auto selected = doc.select_nodes(L"/ArrayOfModel_Room_Detail_Electric_Get/Model_Room_Detail_Electric_Get/cameraInfo/Model_CameraInfo[camType='3' and camName='Tea1']/camInfo");//or camType='2' and
+	const wchar_t* PATH = L"/ArrayOfModel_Room_Detail_Electric_Get/Model_Room_Detail_Electric_Get[electricType=2 or electricType=4]/cameraInfo/Model_CameraInfo[camName='Tea1']";
+	auto selected = doc.select_nodes(PATH);//or camType='2' and
 	
 	if (selected.empty())
 	{
-		throw std::wstring(L"/ArrayOfModel_Room_Detail_Electric_Get/Model_Room_Detail_Electric_Get/cameraInfo/Model_CameraInfo[camType='3' and camName='Tea1']/camInfo") + L"does not exist in WS_IDMC_Room_Detail_Electric_Get WEB API。无法获取到摄像机IP";
+		throw std::wstring(PATH) + L" does not exist in WS_IDMC_Room_Detail_Electric_Get WEB API。无法获取到摄像机IP";
 	}
-	CString camInfo = selected[0].node().child_value();
+	
+	pugi::xml_node camTypeNode = selected[0].node().child(L"camType");
+	pugi::xml_node camInfoNode = selected[0].node().child(L"camInfo");
+	if (!camTypeNode || !camInfoNode)
+	{
+		throw std::wstring(L"Can not find camType or camInfo");
+	}
+	CString camType = camTypeNode.child_value();
+
+	CString camInfo = camInfoNode.child_value();
 	//url = "rtsp://" + infos[2] + ":" + infos[3] + "@" + infos[0] + ":" + infos[1];
 	CStringArray lstInfo;
 	camInfo += "||||";
@@ -133,7 +143,19 @@ CString DataInit::GetCameraIP(const CString& WS_IDMC_Room_Detail_Electric_Get)
 		begin = i + 1;
 		i = camInfo.Find(L"|", begin);
 	}
-	return "rtsp://" + lstInfo[2] + ":" + lstInfo[3] + "@" + lstInfo[0] + ":" + lstInfo[1];
+	CString address = "rtsp://" + lstInfo[2] + ":" + lstInfo[3] + "@" + lstInfo[0] + ":" + lstInfo[1];
+	if (camType == "3")
+	{
+		return address + L"/live/av0";
+	}
+	else if (camType == "1" || camType == "2")
+	{
+		return address;
+	}
+	else
+	{
+		throw std::wstring(L"Not Supported camType:") + camType.operator LPCWSTR();
+	}
 }
 
 void MatToCImage(Mat& mat, CImage& cimage)
@@ -332,4 +354,32 @@ CRect(*CameraThings::GetDataFromRegedit(EBBStatus eBBType, CSize size))[4]
 		}
 	}
 	return rects;
+}
+
+bool CameraThings::IsAllMarked(EBBStatus eBBType)
+{
+	CString strSubKey = RIGISTER_KEY + CString(_T("\\CloudClassroom\\ProcParam"));
+	
+	//需要保存的点
+	for (int i = 0; i < eBBType; ++i)
+	{
+		for (int j = 0; j < 4; ++j)
+		{
+			std::wstring xKey = std::to_wstring(eBBType) + L"BBAnchor" + std::to_wstring(i) + std::to_wstring(j) + L"X";
+			std::wstring yKey = std::to_wstring(eBBType) + L"BBAnchor" + std::to_wstring(i) + std::to_wstring(j) + L"Y";
+			std::wstring wKey = std::to_wstring(eBBType) + L"BBAnchor" + std::to_wstring(i) + std::to_wstring(j) + L"W";
+			std::wstring hKey = std::to_wstring(eBBType) + L"BBAnchor" + std::to_wstring(i) + std::to_wstring(j) + L"H";
+
+			int xDest = stoi(getstrValueFromRegedit(strSubKey, xKey.c_str()).operator LPCWSTR());
+			int yDest = stoi(getstrValueFromRegedit(strSubKey, yKey.c_str()).operator LPCWSTR());
+			int wDest = stoi(getstrValueFromRegedit(strSubKey, wKey.c_str()).operator LPCWSTR());
+			int hDest = stoi(getstrValueFromRegedit(strSubKey, hKey.c_str()).operator LPCWSTR());
+			if (wDest == 0 || hDest == 0)
+			{
+				return false;
+			}
+			
+		}
+	}
+	return true;
 }

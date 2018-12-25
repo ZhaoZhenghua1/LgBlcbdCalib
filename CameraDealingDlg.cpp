@@ -28,6 +28,7 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 
 	CRect minibbRECT = { 93,102, 327, 153 };
 	MiniBlackBoard* minibb = CreateT<MiniBlackBoard>(minibbRECT);
+	m_miniBB = minibb;
 
 	CRect checkRECT = {92,55, 92+ 63, 55 + 30};
 	CheckButton* checkBtn1 = CreateT<CheckButton>(checkRECT);
@@ -124,12 +125,14 @@ CCameraDealingDlg::CCameraDealingDlg(CWnd* pParent /*=NULL*/)
 	CRect closeRECT = { 976,5, 998, 27 };
 	BlankPushButton* blankBtnClose = CreateT<BlankPushButton>(closeRECT);
 	m_close = blankBtnClose;
-	blankBtnClose->SetInvoker([]() {PostQuitMessage(0);});
+	blankBtnClose->SetInvoker([=]() {this->Close();});
 
-	CRect miniRECT = { 943,5, 998, 27 };
+	CRect miniRECT = { 943,5, 967, 27 };
 	BlankPushButton* blankBtnMinimum = CreateT<BlankPushButton>(miniRECT);
 	m_minimum = blankBtnMinimum;
-	blankBtnMinimum->SetInvoker([=]() {this->ShowWindow(SW_MINIMIZE);});
+	blankBtnMinimum->SetInvoker([=]() {
+		this->ShowWindow(SW_MINIMIZE);
+	});
 
 	CRect cameraRect = { 13,174,988,677 };
 	m_camera = CreateT<CameraItem>(cameraRect);
@@ -445,5 +448,24 @@ void CCameraDealingDlg::OnTimer(UINT_PTR nIDEvent)
 		m_camera->Update();
 	}
 	CDialogEx::OnTimer(nIDEvent);
+}
+
+void CCameraDealingDlg::Close()
+{
+	//是否已经打开摄像头
+	if (!m_camera->Visible())
+	{
+		::MessageBox(this->m_hWnd, L"请先打开摄像头!", L"请打开摄像头", 0);
+		return;
+	}
+	//是否全部标定
+	if (m_camera->GetCameraThings().IsAllMarked(m_miniBB->GetBBStatus()))
+	{
+		PostQuitMessage(0);
+	}
+	else
+	{
+		::MessageBox(this->m_hWnd, L"请标定所有点后点击保存,然后再退出!", L"请先标定", 0);
+	}
 }
 
